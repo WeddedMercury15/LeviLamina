@@ -37,7 +37,7 @@ jobs:
           xmake repo -u
 
       - run: |
-          xmake f -a x64 -m ${{ matrix.mode }} -p linux -v -y --publish=y
+          xmake f -a x86_64 -m ${{ matrix.mode }} -p linux -v -y --publish=y
 
       - run: |
           xmake -v -y
