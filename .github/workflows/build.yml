@@ -31,15 +31,14 @@ jobs:
         tests:
           - true
           - false
-    runs-on: windows-latest
+    runs-on: ubuntu-latest  # 更改为 Ubuntu 以支持 Linux 构建
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - uses: xmake-io/github-action-setup-xmake@v1
-        # with:
-        #   xmake-version: branch@master
+        # 可以在这里指定 xmake 版本，默认使用 master 分支
 
       - uses: matbour/setup-sentry-cli@v1
         with:
@@ -50,27 +49,25 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: |
-            ~/AppData/Local/.xmake
+            ~/.xmake
           key: xmake-${{ hashFiles('xmake.lua') }}
           restore-keys: |
             xmake-
 
-      - uses: microsoft/setup-msbuild@v2
+      - run: |
+          xmake repo -u  # 更新 xmake 仓库
 
       - run: |
-          xmake repo -u
+          xmake f -a x64 -m ${{ matrix.mode }} -p linux -v -y --target_type=${{ matrix.target_type }} --tests=${{ matrix.tests }}  # 更改为 Linux 平台构建
 
       - run: |
-          xmake f -a x64 -m ${{ matrix.mode }} -p windows -v -y --target_type=${{ matrix.target_type }} --tests=${{ matrix.tests }}
+          xmake -v -y  # 执行构建
 
       - run: |
-          xmake -v -y
-
-      - run: |
-          sentry-cli debug-files upload --include-sources bin/LeviLamina
+          sentry-cli debug-files upload --include-sources bin/LeviLamina  # 上传调试文件（如果有需要）
 
       - uses: actions/upload-artifact@v4
         with:
-          name: levilamina-${{ matrix.target_type }}-${{ matrix.mode }}${{ matrix.tests == true && '-tests' || '' }}-windows-x64-${{ github.sha }}
+          name: levilamina-${{ matrix.target_type }}-${{ matrix.mode }}${{ matrix.tests == true && '-tests' || '' }}-linux-x64-${{ github.sha }}
           path: |
-            bin/
+            bin/  # 上传生成的可执行文件
