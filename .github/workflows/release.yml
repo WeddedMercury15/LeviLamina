@@ -11,15 +11,13 @@ jobs:
         mode:
           - debug
           - release
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - uses: xmake-io/github-action-setup-xmake@v1
-        # with:
-        #   xmake-version: branch@master
 
       - uses: matbour/setup-sentry-cli@v1
         with:
@@ -30,18 +28,16 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: |
-            ~/AppData/Local/.xmake
+            ~/.xmake
           key: xmake-${{ hashFiles('xmake.lua') }}
           restore-keys: |
             xmake-
-
-      - uses: microsoft/setup-msbuild@v2
 
       - run: |
           xmake repo -u
 
       - run: |
-          xmake f -a x64 -m ${{ matrix.mode }} -p windows -v -y --publish=y
+          xmake f -a x64 -m ${{ matrix.mode }} -p linux -v -y --publish=y
 
       - run: |
           xmake -v -y
@@ -49,12 +45,9 @@ jobs:
       - run: |
           sentry-cli debug-files upload --include-sources bin/LeviLamina
 
-    #   - run: |
-    #       xmake package -v -y
-
       - uses: actions/upload-artifact@v4
         with:
-          name: levilamina-${{ matrix.mode }}-windows-x64-${{ github.sha }}
+          name: levilamina-${{ matrix.mode }}-linux-x64-${{ github.sha }}
           path: |
             bin/
 
@@ -98,24 +91,24 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          name: levilamina-${{ matrix.mode }}-windows-x64-${{ github.sha }}
+          name: levilamina-${{ matrix.mode }}-linux-x64-${{ github.sha }}
           path: artifact
 
       - run: |
           cp CHANGELOG.md COPYING COPYING.LESSER README.md artifact/
 
       - run: |
-          zip -r ../levilamina-${{ matrix.mode }}-windows-x64.zip *
+          tar -czvf ../levilamina-${{ matrix.mode }}-linux-x64.tar.gz *
         working-directory: artifact
 
       - id: calculate-sha256
         run: |
-          echo sha256=$(sha256sum levilamina-${{ matrix.mode }}-windows-x64.zip | awk '{print $1}') >> $GITHUB_OUTPUT
+          echo sha256=$(sha256sum levilamina-${{ matrix.mode }}-linux-x64.tar.gz | awk '{print $1}') >> $GITHUB_OUTPUT
 
       - uses: softprops/action-gh-release@v2
         with:
           append_body: true
           body: |-
-            | levilamina-${{ matrix.mode }}-windows-x64.zip | ${{ steps.calculate-sha256.outputs.sha256 }} |
+            | levilamina-${{ matrix.mode }}-linux-x64.tar.gz | ${{ steps.calculate-sha256.outputs.sha256 }} |
           files: |
-            levilamina-${{ matrix.mode }}-windows-x64.zip
+            levilamina-${{ matrix.mode }}-linux-x64.tar.gz
